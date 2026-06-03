@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>畢業學分選課紀錄系統</title>
+  <style>
+    :root {
+      --bg: #0d0f12;
+      --panel: #171b20;
+      --panel2: #20262d;
+      --line: #3a424d;
+      --accent: #ff9800;
+      --accent2: #ffc107;
+      --text: #eef2f7;
+      --muted: #9aa4b2;
+      --danger: #ff5252;
+      --ok: #4ade80;
+      --input: #11161c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 152, 0, 0.18), transparent 34%),
+        linear-gradient(135deg, #0b0d10 0%, #161a1f 48%, #0d0f12 100%);
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      background: rgba(13, 15, 18, 0.92);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .topbar {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mark {
+      width: 42px;
+      height: 42px;
+      border: 2px solid var(--accent);
+      display: grid;
+      place-items: center;
+      color: var(--accent2);
+      font-weight: 900;
+      box-shadow: 0 0 18px rgba(255, 152, 0, 0.28);
+    }
+
+    h1, h2, h3 { margin: 0; }
+    h1 { font-size: 22px; letter-spacing: 1px; }
+    h2 { font-size: 22px; margin-bottom: 16px; color: var(--accent2); }
+    h3 { font-size: 18px; color: var(--accent); margin: 24px 0 10px; }
+
+    .user-chip {
+      color: var(--muted);
+      font-size: 14px;
+      border: 1px solid var(--line);
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.03);
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 26px 20px 50px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(32, 38, 45, 0.96), rgba(23, 27, 32, 0.96));
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+      padding: 22px;
+      border-radius: 14px;
+    }
+
+    .card + .card { margin-top: 20px; }
+
+    label {
+      display: block;
+      font-size: 14px;
+      color: var(--muted);
+      margin: 12px 0 6px;
+    }
+
+    input, select, button {
+      font: inherit;
+      border-radius: 8px;
+    }
+
+    input, select {
+      width: 100%;
+      background: var(--input);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 11px 12px;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.18);
+    }
+
+    button {
+      border: 0;
+      padding: 11px 15px;
+      cursor: pointer;
+      background: linear-gradient(180deg, var(--accent2), var(--accent));
+      color: #17120a;
+      font-weight: 800;
+      transition: transform .08s ease, filter .12s ease;
+    }
+
+    button:hover { filter: brightness(1.06); }
+    button:active { transform: translateY(1px); }
+
+    button.secondary {
+      background: #27313b;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    button.danger {
+      background: #4b1f24;
+      color: #ffd5d5;
+      border: 1px solid #73303a;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .row > button { flex: 1; min-width: 120px; }
+
+    .hidden { display: none !important; }
+
+    .msg {
+      min-height: 22px;
+      margin-top: 12px;
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+
+    .msg.ok { color: var(--ok); }
+    .msg.err { color: var(--danger); }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    @media (max-width: 700px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,0.18);
+      padding: 14px;
+      border-radius: 12px;
+    }
+
+    .stat .num { font-size: 24px; font-weight: 900; color: var(--accent2); }
+    .stat .label { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,0.15);
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+      font-size: 14px;
+    }
+
+    th {
+      background: #252c35;
+      color: var(--accent2);
+      white-space: nowrap;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    td select { min-width: 118px; }
+
+    .note {
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar input { max-width: 280px; }
+
+    .badge {
+      display: inline-block;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 9px;
+      color: var(--muted);
+      font-size: 12px;
+      margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div class="brand">
+        <div class="mark">CR</div>
+        <div>
+          <h1>畢業學分選課紀錄系統</h1>
+          <div class="note">通識教育、學系專業、自由修讀紀錄管理</div>
+        </div>
+      </div>
+      <div id="loginInfo" class="user-chip hidden"></div>
+    </div>
+  </header>
+
+  <main>
+    <section id="authPage" class="grid">
+      <div class="card">
+        <h2>登入系統</h2>
+        <label for="loginUsername">帳號</label>
+        <input id="loginUsername" autocomplete="username" placeholder="請輸入帳號" />
+        <label for="loginPassword">密碼</label>
+        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="請輸入密碼" />
+        <div class="row" style="margin-top: 16px;">
+          <button onclick="login()">登入</button>
+        </div>
+        <p id="loginMsg" class="msg"></p>
+      </div>
+
+      <div class="card">
+        <h2>註冊帳號</h2>
+        <label for="regUsername">帳號</label>
+        <input id="regUsername" autocomplete="username" placeholder="例如：student001" />
+        <label for="regPassword">密碼</label>
+        <input id="regPassword" type="password" autocomplete="new-password" placeholder="至少 4 個字元" />
+        <div class="row" style="margin-top: 16px;">
+          <button class="secondary" onclick="register()">建立帳號</button>
+        </div>
+        <p id="regMsg" class="msg"></p>
+        <div class="note">
+          最高管理員設定方式：先註冊一個帳號，例如 admin，再到 Users 工作表把該帳號 role 改成 admin。
+        </div>
+      </div>
+    </section>
+
+    <section id="studentPage" class="hidden">
+      <div class="stats">
+        <div class="stat"><div id="selectedCount" class="num">0</div><div class="label">已選課程數</div></div>
+        <div class="stat"><div id="creditTotal" class="num">0</div><div class="label">已記錄學分</div></div>
+        <div class="stat"><div id="doneTotal" class="num">0</div><div class="label">已修學分</div></div>
+        <div class="stat"><div id="progressText" class="num">0%</div><div class="label">距 128 學分進度</div></div>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <h2>我的選課紀錄</h2>
+            <div class="note">可標記：未選、已修、正在修、想選修</div>
+          </div>
+          <div class="row">
+            <button onclick="saveSelections()">儲存紀錄</button>
+            <button class="danger" onclick="logout()">登出</button>
+          </div>
+        </div>
+        <div id="courseList"></div>
+        <p id="saveMsg" class="msg"></p>
+      </div>
+    </section>
+
+    <section id="adminPage" class="hidden">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <h2>最高管理員後台</h2>
+            <div class="note">可查看所有使用者的選課紀錄。</div>
+          </div>
+          <div class="row">
+            <button onclick="loadAllSelections()">重新整理</button>
+            <button class="danger" onclick="logout()">登出</button>
+          </div>
+        </div>
+        <label for="adminSearch">搜尋帳號、學系或課程</label>
+        <input id="adminSearch" placeholder="輸入關鍵字過濾" oninput="renderAdminTable()" />
+        <div id="adminResult" style="margin-top: 16px;"></div>
+        <p id="adminMsg" class="msg"></p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // TODO：部署 Apps Script 後，請把這裡改成你的 Web App URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbxlqkXVYuN5TT0Fx7AlX0pWVgah-9DOcQyZWdb1-2qDyyc1zU6ZAb4rrG2KilbuQsRr2A/exec";
+
+    let currentUser = "";
+    let currentRole = "";
+    let savedSelections = [];
+    let allSelections = [];
+
+    const courses = [
+      { dept: "法律系", name: "憲法", credit: 3 },
+      { dept: "法律系", name: "行政法", credit: 3 },
+      { dept: "法律系", name: "民法總則", credit: 3 },
+      { dept: "法律系", name: "刑法總則", credit: 3 },
+      { dept: "法律系", name: "政治學", credit: 3 },
+      { dept: "工商系", name: "會計學（一）", credit: 3 },
+      { dept: "工商系", name: "統計學（一）", credit: 2 },
+      { dept: "工商系", name: "經濟學（一）", credit: 3 },
+      { dept: "工商系", name: "管理學（一）", credit: 2 },
+      { dept: "工商系", name: "企業管理", credit: 3 },
+      { dept: "大傳系", name: "傳播寫作", credit: 2 },
+      { dept: "大傳系", name: "大眾傳播史", credit: 2 },
+      { dept: "大傳系", name: "傳播科技概論", credit: 3 },
+      { dept: "大傳系", name: "創意思考", credit: 3 },
+      { dept: "大傳系", name: "性別與傳播", credit: 3 },
+      { dept: "科管系", name: "科技管理", credit: 3 },
+      { dept: "科管系", name: "管理學", credit: 3 },
+      { dept: "科管系", name: "行銷管理", credit: 3 },
+      { dept: "科管系", name: "計算機概論", credit: 3 },
+      { dept: "健管系", name: "健康促進", credit: 2 },
+      { dept: "健管系", name: "營養學", credit: 3 },
+      { dept: "健管系", name: "健康管理概論", credit: 3 },
+      { dept: "健管系", name: "健康管理與心理學", credit: 3 },
+      { dept: "文藝系", name: "台灣文化史", credit: 2 },
+      { dept: "文藝系", name: "藝術概論", credit: 3 },
+      { dept: "文藝系", name: "台灣美術史", credit: 3 },
+      { dept: "文藝系", name: "音樂概論", credit: 3 },
+      { dept: "文藝系", name: "台灣音樂史", credit: 3 },
+      { dept: "外文系（日文組）", name: "基礎日語（一）", credit: 2 },
+      { dept: "外文系（日文組）", name: "基礎日語（二）", credit: 2 },
+      { dept: "外文系（日文組）", name: "基礎日語（三）", credit: 2 },
+      { dept: "外文系（英文組）", name: "英語語言學概論", credit: 3 },
+      { dept: "外文系（英文組）", name: "西洋文學概論", credit: 3 }
+    ];
+
+    function $(id) { return document.getElementById(id); }
+
+    function setMsg(id, text, type = "") {
+      const el = $(id);
+      el.textContent = text || "";
+      el.className = "msg" + (type ? " " + type : "");
+    }
+
+    async function api(action, data = {}) {
+      if (!API_URL || API_URL.includes("請貼上")) {
+        throw new Error("尚未設定 API_URL，請先部署 Apps Script，並把 Web App URL 貼到 index.html 裡。 ");
+      }
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action, ...data })
+      });
+      return await res.json();
+    }
+
+    async function register() {
+      const username = $("regUsername").value.trim();
+      const password = $("regPassword").value.trim();
+      if (!username || !password) return setMsg("regMsg", "請輸入帳號與密碼。", "err");
+      if (password.length < 4) return setMsg("regMsg", "密碼至少需要 4 個字元。", "err");
+      try {
+        setMsg("regMsg", "建立中...");
+        const result = await api("register", { username, password });
+        setMsg("regMsg", result.message, result.success ? "ok" : "err");
+      } catch (err) {
+        setMsg("regMsg", err.message, "err");
+      }
+    }
+
+    async function login() {
+      const username = $("loginUsername").value.trim();
+      const password = $("loginPassword").value.trim();
+      if (!username || !password) return setMsg("loginMsg", "請輸入帳號與密碼。", "err");
+      try {
+        setMsg("loginMsg", "登入中...");
+        const result = await api("login", { username, password });
+        if (!result.success) return setMsg("loginMsg", result.message, "err");
+
+        currentUser = username;
+        currentRole = result.role;
+        $("authPage").classList.add("hidden");
+        $("loginInfo").classList.remove("hidden");
+        $("loginInfo").textContent = `${currentUser}｜${currentRole}`;
+
+        if (currentRole === "admin") {
+          $("adminPage").classList.remove("hidden");
+          await loadAllSelections();
+        } else {
+          $("studentPage").classList.remove("hidden");
+          await loadMySelections();
+        }
+      } catch (err) {
+        setMsg("loginMsg", err.message, "err");
+      }
+    }
+
+    function logout() {
+      currentUser = "";
+      currentRole = "";
+      savedSelections = [];
+      allSelections = [];
+      $("authPage").classList.remove("hidden");
+      $("studentPage").classList.add("hidden");
+      $("adminPage").classList.add("hidden");
+      $("loginInfo").classList.add("hidden");
+      setMsg("loginMsg", "");
+      setMsg("regMsg", "");
+    }
+
+    async function loadMySelections() {
+      setMsg("saveMsg", "讀取紀錄中...");
+      const result = await api("getMySelections", { username: currentUser });
+      savedSelections = result.data || [];
+      renderCourses();
+      setMsg("saveMsg", "紀錄已載入。", "ok");
+    }
+
+    function renderCourses() {
+      const grouped = {};
+      courses.forEach(course => {
+        if (!grouped[course.dept]) grouped[course.dept] = [];
+        grouped[course.dept].push(course);
+      });
+
+      let html = "";
+      Object.keys(grouped).forEach(dept => {
+        const deptCredits = grouped[dept].reduce((sum, c) => sum + c.credit, 0);
+        html += `<h3>${escapeHtml(dept)} <span class="badge">${grouped[dept].length} 科｜${deptCredits} 學分</span></h3>`;
+        html += `<table><thead><tr><th>課程名稱</th><th>學分</th><th>狀態</th></tr></thead><tbody>`;
+        grouped[dept].forEach(course => {
+          const found = savedSelections.find(item => item.courseName === course.name && item.dept === course.dept);
+          const status = found ? found.status : "未選";
+          html += `
+            <tr>
+              <td>${escapeHtml(course.name)}</td>
+              <td>${course.credit}</td>
+              <td>
+                <select data-dept="${escapeAttr(course.dept)}" data-name="${escapeAttr(course.name)}" data-credit="${course.credit}" onchange="updateStats()">
+                  ${option("未選", status)}
+                  ${option("已修", status)}
+                  ${option("正在修", status)}
+                  ${option("想選修", status)}
+                </select>
+              </td>
+            </tr>`;
+        });
+        html += `</tbody></table>`;
+      });
+      $("courseList").innerHTML = html;
+      updateStats();
+    }
+
+    function option(value, current) {
+      return `<option value="${value}" ${value === current ? "selected" : ""}>${value}</option>`;
+    }
+
+    function collectSelections() {
+      return [...document.querySelectorAll("#courseList select")]
+        .filter(select => select.value !== "未選")
+        .map(select => ({
+          dept: select.dataset.dept,
+          courseName: select.dataset.name,
+          credit: Number(select.dataset.credit),
+          status: select.value
+        }));
+    }
+
+    function updateStats() {
+      const selections = collectSelections();
+      const creditTotal = selections.reduce((sum, item) => sum + item.credit, 0);
+      const doneTotal = selections.filter(item => item.status === "已修").reduce((sum, item) => sum + item.credit, 0);
+      $("selectedCount").textContent = selections.length;
+      $("creditTotal").textContent = creditTotal;
+      $("doneTotal").textContent = doneTotal;
+      $("progressText").textContent = Math.min(100, Math.round((creditTotal / 128) * 100)) + "%";
+    }
+
+    async function saveSelections() {
+      try {
+        const selections = collectSelections();
+        setMsg("saveMsg", "儲存中...");
+        const result = await api("saveSelections", { username: currentUser, selections });
+        savedSelections = selections;
+        setMsg("saveMsg", result.message, result.success ? "ok" : "err");
+      } catch (err) {
+        setMsg("saveMsg", err.message, "err");
+      }
+    }
+
+    async function loadAllSelections() {
+      try {
+        setMsg("adminMsg", "讀取所有紀錄中...");
+        const result = await api("getAllSelections", { username: currentUser });
+        if (!result.success) return setMsg("adminMsg", result.message, "err");
+        allSelections = result.data || [];
+        renderAdminTable();
+        setMsg("adminMsg", `共 ${allSelections.length} 筆紀錄。`, "ok");
+      } catch (err) {
+        setMsg("adminMsg", err.message, "err");
+      }
+    }
+
+    function renderAdminTable() {
+      const q = ($("adminSearch").value || "").trim().toLowerCase();
+      const rows = allSelections.filter(row => {
+        const text = `${row.username} ${row.dept} ${row.courseName} ${row.status}`.toLowerCase();
+        return !q || text.includes(q);
+      });
+
+      if (!rows.length) {
+        $("adminResult").innerHTML = `<div class="note">目前沒有符合的選課紀錄。</div>`;
+        return;
+      }
+
+      let html = `<table><thead><tr><th>帳號</th><th>學系</th><th>課程</th><th>學分</th><th>狀態</th><th>更新時間</th></tr></thead><tbody>`;
+      rows.forEach(row => {
+        html += `<tr>
+          <td>${escapeHtml(row.username)}</td>
+          <td>${escapeHtml(row.dept)}</td>
+          <td>${escapeHtml(row.courseName)}</td>
+          <td>${row.credit}</td>
+          <td>${escapeHtml(row.status)}</td>
+          <td>${escapeHtml(row.updatedAt || "")}</td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+      $("adminResult").innerHTML = html;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"]/g, s => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[s]));
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/'/g, "&#39;");
+    }
+  </script>
+</body>
+</html>
